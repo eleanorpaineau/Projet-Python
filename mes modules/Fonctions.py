@@ -3,10 +3,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from math import ceil
 
-np.random.seed(123)
-
 ### Constantes
 
+np.random.seed(123)
 metrics = ["Number", "Percent", "Rate"]
 colonness_GBD = ["location_id", "location_name", "cause_id", "cause_name", "metric_id", "metric_name", "year", "value","upper_bound", "lower_bound"]
 
@@ -28,7 +27,7 @@ def passage_en_numerique(df_GBD):
     df_GBD_modifie["var"] = df_GBD_modifie["ecart_type"]**2
     return df_GBD_modifie
 
-# fonction qui prend en argument un dataframe, la liste des causes associées à une cause générale et renvoie une liste de trois dataframe (un pour chaque métrique) qui contient le pays, l'année, les valeurs aggrégées pour cette cause générale et la métrique
+# fonction qui prend en argument un dataframe, la liste des causes associées à une cause générale et renvoie un dataframe qui contient le pays, l'année,la métrique, les valeurs aggrégées, et les lower_bound et upper_bound pour cette cause générale.
 
 def dataframe_par_metrique(df, cause, metric) :
     L = [] # initialisation de la liste
@@ -37,4 +36,12 @@ def dataframe_par_metrique(df, cause, metric) :
         df_aggreg_i = df_filtre_i.groupby(["location_id","location_name", "year"], as_index=False)["value"].sum() # aggrégation
         df_aggreg_i = df_aggreg_i.assign(metric_id = i, metric_name = metric[i-1] ) # ajout du nom et le numéro de la métrique  
         L.append(df_aggreg_i)
-    return(L)
+        df_aggreg_var_i = df_filtre_i.groupby(["location_id","location_name", "year"], as_index=False)["var"].sum() # somme des variances
+        df_aggreg_var_i["ecart_type"] = np.sqrt(df_aggreg_var_i["var"]) # écart-type
+        
+        M = 1.96*df_aggreg_var_i["ecart_type"]
+
+        L[i-1]["lower_bound"] = L[i-1]["value"] - M # calcul du lower_bound
+        L[i-1]["upper_bound"] = L[i-1]["value"] + M # calcul du upper_bound
+    return(pd.concat(L, ignore_index=True))
+
