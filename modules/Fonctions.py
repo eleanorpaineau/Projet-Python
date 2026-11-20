@@ -12,6 +12,8 @@ causes_generales = [["All causes", 1, [294]],["Malignant neoplasm", 2, [1012, 45
 numero_agg = [1012, 459, 489, 689, 688, 724, 945, 854] # numeros des causes aggrégées
 numero_non_agg = [294,491,521,322,718,696] # numeros des causes non aggrégées 
 
+################# Fonctions de formatage des tableaux 
+
 ##### Fonctions IHME
 
 # fonction de création d'un dataframe qui ne comporte que les colonnes utiles pour l'analyse et qui convertit les colonnes value, upper_bound et lower_bound en numériques
@@ -69,5 +71,60 @@ def ajout_numero_pays(df, nom_colonne_pays, nom_colonne_id_pays) :
     df_pays[nom_colonne_id_pays] = df_pays.index + 1 # ajout du numéro d'identité du pays
     df = df_court.merge(df_pays, on=nom_colonne_pays, how="right") # fusion des deux dataframes
     return df
-    
 
+
+########################## Fonctions pour les figures
+
+
+#Fonction qui permet de créer un sous dataframe à partir d'un datafram original, d'une métrique, d'une cause et d'un pays
+#Cela permet de ne garder que l'évolution d'une cause précise pour un pays et une métrique donnés
+
+
+def sous_dataframe(df, metric_id, cause_id, location_id) :
+    df_sous = df[(df["metric_id"] == metric_id) & (df["cause_id"] == cause_id) & (df["location_id"] == location_id)]
+    return(df_sous)
+
+#fonction qui dessine le tabeleau ci-dessus
+def plot_dataframe(df, metric_id, cause_id, location_id) :
+    df_sous = sous_dataframe(df, metric_id, cause_id, location_id)
+    plt.figure()
+    plt.plot(df_sous["year"], df_sous["value"], marker='o', label='Value')
+    plt.fill_between(df_sous["year"], df_sous["lower_bound"], df_sous["upper_bound"], color='gray', alpha=0.2, label='Standard error')
+    plt.title(f"Evolution of {df_sous['cause_name'].iloc[0]} in {df_sous['location_name'].iloc[0]} ({df_sous['metric_name'].iloc[0]})")
+    plt.xlabel("Time (Year)")
+    plt.ylabel("Value (number of deaths per 100,000 population)")
+    plt.legend(loc='upper right', bbox_to_anchor=(1.5, 1),
+          ncol=1, fancybox=True, shadow=True)    
+    plt.grid()
+    plt.show()
+    
+#Fonction qui plot sur un même graphique l'évolution d'une cause pour N pays dont l'id_location est dans une liste
+def plot_dataframe_multiple_countries(df, metric_id, cause_id, location_ids):
+    N=len(location_ids)
+    plt.figure()
+    for location_id in location_ids:
+         df_sous = sous_dataframe(df, metric_id, cause_id, location_id)
+         plt.plot(df_sous["year"], df_sous["value"], marker='o', label=f"{df_sous['location_name'].iloc[0]}")
+         plt.fill_between(df_sous["year"], df_sous["lower_bound"], df_sous["upper_bound"], color='gray', alpha=0.2)
+    plt.title(f"Evolution of {df_sous['cause_name'].iloc[0]} ({df_sous['metric_name'].iloc[0]})")
+    plt.xlabel("Time (Year)")
+    plt.ylabel("Value (number of deaths per 100,000 population)")
+    plt.legend(loc='upper right', bbox_to_anchor=(1+0.4*ceil(N/14), 1),
+          ncol=ceil(N/14), fancybox=True, shadow=True)
+    plt.grid()
+    plt.show()
+  
+# Fonction qui plot sur un même graphique l'évolution de N causes pour un pays dont l'id_location est donnée   
+def plot_dataframe_multiple_causes(df, metric_id, cause_ids, location_id):
+    plt.figure()
+    for cause_id in cause_ids:
+        df_sous = sous_dataframe(df, metric_id, cause_id, location_id)
+        plt.plot(df_sous["year"], df_sous["value"], marker='o', label=f"{df_sous['cause_name'].iloc[0]}")
+        plt.fill_between(df_sous["year"], df_sous["lower_bound"], df_sous["upper_bound"], color='gray', alpha=0.2)
+    plt.title(f"Evolution of causes in {df_sous['location_name'].iloc[0]} ({df_sous['metric_name'].iloc[0]})")
+    plt.xlabel("Time (Year)")
+    plt.ylabel("Value (number of deaths per 100,000 population)")
+    plt.legend(loc='upper right', bbox_to_anchor=(1.5, 1),
+          ncol=1, fancybox=True, shadow=True)
+    plt.grid()
+    plt.show()
