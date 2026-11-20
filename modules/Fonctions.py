@@ -2,6 +2,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from math import ceil
+import wbgapi as wb
+import pandas as pd
+from pathlib import Path
+from functools import reduce
 
 ### Constantes
 
@@ -12,7 +16,49 @@ causes_generales = [["All causes", 1, [294]],["Malignant neoplasm", 2, [1012, 45
 numero_agg = [1012, 459, 489, 689, 688, 724, 945, 854] # numeros des causes aggrégées
 numero_non_agg = [294,491,521,322,718,696] # numeros des causes non aggrégées 
 
+countries = ["AUS", "AUT", "BEL", "CAN", "CHL", "COL", "CRI", "CZE", "DNK", "EST", "FIN", "FRA", "DEU", "GRC", "HUN", "ISL", "IRL", "ISR", "ITA",
+             "JPN", "KOR", "LVA", "LTU", "LUX", "MEX", "NLD", "NZL", "NOR", "POL", "PRT", "SVK", "SVN", "ESP", "SWE", "CHE", "TUR", "GBR", "USA"]
+
+indicateurs_vers_croissance = {
+    "Taux_chômage": "Croissance_taux_chômage",
+    "Taux_chômage_F": "Croissance_chômage_F",
+    "Taux_chômage_H": "Croissance_chômage_H",
+    "PIB/hab_ppa": "Croissance_PIB_hab_ppa",
+    "Population": "Croissance_population",
+}
+
+code_vers_label = {
+    "SL.UEM.TOTL.ZS": "Taux_chômage",
+    "SL.UEM.TOTL.FE.ZS": "Taux_chômage_F",
+    "SL.UEM.TOTL.MA.ZS": "Taux_chômage_H",
+    "NY.GDP.PCAP.PP.KD": "PIB/hab_ppa",
+    "SP.POP.TOTL": "Population",
+    "SP.POP.65UP.TO.ZS": "Pourcentage_pop_65plus",
+    "SH.XPD.GHED.GD.ZS": "Pourcentage_PIB_dépenses_santé"
+}
+#Création d'un tableau qui associe les codes pays à leurs noms complets en anglais
+noms_pays = pd.DataFrame({
+    "economy": countries,
+
+    "location_name": ["Australia", "Austria", "Belgium", "Canada", "Chile", "Colombia", "Costa Rica",
+    "Czechia", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece",
+    "Hungary", "Iceland", "Ireland", "Israel", "Italy", "Japan", "South Korea",
+    "Latvia", "Lithuania", "Luxembourg", "Mexico", "Netherlands", "New Zealand",
+    "Norway", "Poland", "Portugal", "Slovakia", "Slovenia", "Spain", "Sweden",
+    "Switzerland", "Turkey", "United Kingdom", "United States"]
+})
+
 ################# Fonctions de formatage des tableaux 
+
+##### Fonctions pour les deux datafrmes 
+
+# Fonction qui prend en argument un dataframe et le nom de la colonne des pays et renvoie le même dataframe avec le numéro d'identité du pays correspondant à chaque pays par ordre alphabétique.
+def ajout_numero_pays(df, nom_colonne_pays, nom_colonne_id_pays) :
+    df_court = df.drop(columns=[nom_colonne_id_pays])
+    df_pays = df_court[[nom_colonne_pays]].drop_duplicates().sort_values(by=nom_colonne_pays).reset_index(drop=True) # dataframe avec une occurence de chaucun des pays triés par ordre alphabétique
+    df_pays[nom_colonne_id_pays] = df_pays.index + 1 # ajout du numéro d'identité du pays
+    df = df_court.merge(df_pays, on=nom_colonne_pays, how="left") # fusion des deux dataframes
+    return df
 
 ##### Fonctions IHME
 
@@ -62,16 +108,30 @@ def filtrage_dataframe(df, annee, metric_id) :
     df_filtre = df[(df["year"] >= annee) & (df["metric_id"] == metric_id)].copy() # filtration du dataframe
     return df_filtre
 
-##### Fonctions pour les deux datafrmes 
+##### Fonctions API World Bank
 
-# Fonction qui prend en argument un dataframe et le nom de la colonne des pays et renvoie le même dataframe avec le numéro d'identité du pays correspondant à chaque pays par ordre alphabétique.
-def ajout_numero_pays(df, nom_colonne_pays, nom_colonne_id_pays) :
-    df_court = df.drop(columns=[nom_colonne_id_pays])
-    df_pays = df_court[[nom_colonne_pays]].drop_duplicates().sort_values(by=nom_colonne_pays).reset_index(drop=True) # dataframe avec une occurence de chaucun des pays triés par ordre alphabétique
+def en_long_WB(df):
+    df_reset = df.reset_index() # On transforme les index en colonnes
+    df_long = df_reset.melt(id_vars=["economy", "series"], var_name="year", value_name="valeur")     # On met les colonnes d'années en une seule colonne 'year'
+    df_long["year"] = df_long["year"].astype(str).str.replace("YR", "").astype(int) # On enlève YR
+    df_final = df_long.pivot(index=["economy", "year"], columns="series", values="valeur").reset_index() # On répartit les indicateurs en colonnes
+    return df_final
+
+def labelisation_dataframe_WB(df, noms_pays, nom_colonne_pays, nom_colonne_id_pays, indicateurs):
+    df_deux_noms = df.merge(noms_pays, on="economy", how="left") # fusion du dataframe de nomes de pays avec le df WB
+    df_un_nom = df_deux_noms.drop(columns=["economy"]) # renommage de la colonne économie en location_id
+    df_pays = df_un_nom[[nom_colonne_pays]].drop_duplicates().sort_values(by=nom_colonne_pays).reset_index(drop=True) # dataframe avec une occurence de chaucun des pays triés par ordre alphabétique
     df_pays[nom_colonne_id_pays] = df_pays.index + 1 # ajout du numéro d'identité du pays
-    df = df_court.merge(df_pays, on=nom_colonne_pays, how="right") # fusion des deux dataframes
-    return df
+    df = df_un_nom.merge(df_pays, on=nom_colonne_pays, how="right") # fusion des deux dataframes
+    df_renomme=df.rename(columns=indicateurs) # renommage des colonnes
+    return df_renomme
 
+
+def taux_croissance_dataframe_WB(df, indicateurs_vers_croissance, group_by): #ajoute les colonnes de taux de croissance pour les indicateurs cités dans indicateurs_vers_croissance dans le dataframe
+    df.sort_values(by=[group_by, "year"], inplace=True) # tri du dataframe par pays et par année
+    for col, croissance_col in indicateurs_vers_croissance.items():
+            df[croissance_col] = df.groupby(group_by)[col].pct_change() * 100
+    return(df)
 
 ########################## Fonctions pour les figures
 
