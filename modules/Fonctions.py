@@ -1,0 +1,68 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from math import ceil
+
+### Constantes
+
+np.random.seed(123)
+metrics = ["Number", "Percent", "Rate"]
+colonness_GBD = ["location_id", "location_name", "cause_id", "cause_name", "metric_id", "metric_name", "year", "value","upper_bound", "lower_bound"]
+causes_generales = [["All causes", 1, [294]],["Malignant neoplasm", 2, [1012, 459, 489]], ["Major cardiovascular diseases", 3,[491]], ["Liver diseases, cirrhosis", 4, [521]], ["Pneumonia and influenza", 5, [322]], ["Motor vehicle accidents", 6, [689, 688]],["Suicide", 7, [718]], ["Other accidents", 8, [696]], ["Homicide", 9, [724, 945,854]]]
+numero_agg = [1012, 459, 489, 689, 688, 724, 945, 854] # numeros des causes aggrégées
+numero_non_agg = [294,491,521,322,718,696] # numeros des causes non aggrégées 
+
+##### Fonctions IHME
+
+# fonction de création d'un dataframe qui ne comporte que les colonnes utiles pour l'analyse et qui convertit les colonnes value, upper_bound et lower_bound en numériques
+
+def passage_en_numerique(df_GBD):
+    df_GBD_modifie = df_GBD[["location_id", "location_name", "cause_id", "cause_name", "metric_id", "metric_name", "year", "value","upper_bound", "lower_bound"]]
+
+    # conversion du texte en valeurs pour value, upper_bound, lower_bound
+    df_GBD_modifie["value"] = pd.to_numeric(df_GBD_modifie["value"])
+    df_GBD_modifie["upper_bound"] = pd.to_numeric(df_GBD_modifie["upper_bound"])
+    df_GBD_modifie["lower_bound"] = pd.to_numeric(df_GBD_modifie["lower_bound"])
+    
+    if df_GBD_modifie["cause_id"].isin(numero_agg).any() : # si la cause est une cause aggrégée
+        # ajout des écarts-types et variances pour après calculer les nouvelles upper_bound et lower_bound
+        df_GBD_modifie["ecart_type"] = (df_GBD_modifie["upper_bound"] - df_GBD_modifie["lower_bound"]) / (2 * 1.96)
+        df_GBD_modifie["var"] = df_GBD_modifie["ecart_type"]**2
+    return df_GBD_modifie
+
+# fonction qui prend en argument un dataframe, la liste de listes des causes associées aux causes générales et renvoie un dataframe qui contient le pays, l'année,la métrique, les valeurs aggrégées, et les lower_bound et upper_bound.
+
+def transformations_dataframe_GBD(df, causes_generales, metric) :
+    for j in range(len(causes_generales)) : # pour chaque cause générale
+        cause = causes_generales[j] # liste de causes associées 
+    L = [] # initialisation de la liste
+    for i in range(len(metric)) : # pour chaque métrique
+        if len(cause[2])>1 : # si la cause est une cause aggrégée
+            df_filtre_i = df[(df["cause_id"].isin(cause[2])) & (df["metric_id"] == i)] # filtration
+            df_aggreg_i = df_filtre_i.groupby(["location_id","location_name", "year"], as_index=False)["value"].sum() # aggrégation
+            df_aggreg_i = df_aggreg_i.assign(metric_id = i, metric_name = metric[i-1] ) # ajout du nom et le numéro de la métrique  
+            L.append(df_aggreg_i)
+            df_aggreg_var_i = df_filtre_i.groupby(["location_id","location_name", "year"], as_index=False)["var"].sum() # somme des variances
+            df_aggreg_var_i["ecart_type"] = np.sqrt(df_aggreg_var_i["var"]) # écart-type
+            M = 1.96*df_aggreg_var_i["ecart_type"]
+
+            L[3*j+i-1]["lower_bound"] = L[3*j+i-1]["value"] - M # calcul du lower_bound
+            L[3*j+i-1]["upper_bound"] = L[3*j+i-1]["value"] + M # calcul du upper_bound
+        df = df.assign(cause_id = cause[1], cause_name = cause[0])
+    return(pd.concat(L, ignore_index=True)) # renvoie le dataframe concaténé
+
+#fonction qui prend un dataframe en argument, une année et une métrique et renvoie ce dataframe pour les années au dessus de l'année et pour la métrique choisie.
+def filtrage_dataframe(df, annee, metric) :
+    df_filtre = df[(df["year"] >= annee) & (df["metric_name"] == metric)]
+    return df_filtre
+
+##### Fonctions pour les deux datafrmes 
+
+# Fonction qui prend en argument un dataframe et le nom de la colonne des pays et renvoie le même dtaframe avec le numéro d'identité du pays correspondant à chaque pays par order alphabétique.
+def ajout_numero_pays(df, nom_colonne) :
+    df_pays = df[[nom_colonne]].drop_duplicates().sort_values(by=nom_colonne).reset_index(drop=True) # dataframe avec une occurence de chaucun des pays triés par ordre alphabétique
+    df_pays["location_id"] = df_pays.index + 1 # ajout du numéro d'identité du pays
+    df = df.merge(df_pays, on=nom_colonne, how="left") # fusion des deux dataframes
+    return df
+    
+    
