@@ -33,36 +33,41 @@ def passage_en_numerique(df_GBD):
 # fonction qui prend en argument un dataframe, la liste de listes des causes associées aux causes générales et renvoie un dataframe qui contient le pays, l'année,la métrique, les valeurs aggrégées, et les lower_bound et upper_bound.
 
 def transformations_dataframe_GBD(df, causes_generales, metric) :
+    L = [] # initialisation de la liste
     for j in range(len(causes_generales)) : # pour chaque cause générale
         cause = causes_generales[j] # liste de causes associées 
-    L = [] # initialisation de la liste
-    for i in range(len(metric)) : # pour chaque métrique
-        if len(cause[2])>1 : # si la cause est une cause aggrégée
-            df_filtre_i = df[(df["cause_id"].isin(cause[2])) & (df["metric_id"] == i)] # filtration
-            df_aggreg_i = df_filtre_i.groupby(["location_id","location_name", "year"], as_index=False)["value"].sum() # aggrégation
-            df_aggreg_i = df_aggreg_i.assign(metric_id = i, metric_name = metric[i-1] ) # ajout du nom et le numéro de la métrique  
-            L.append(df_aggreg_i)
-            df_aggreg_var_i = df_filtre_i.groupby(["location_id","location_name", "year"], as_index=False)["var"].sum() # somme des variances
-            df_aggreg_var_i["ecart_type"] = np.sqrt(df_aggreg_var_i["var"]) # écart-type
-            M = 1.96*df_aggreg_var_i["ecart_type"]
+        for i in range(len(metric)) : # pour chaque métrique
+            if len(cause[2])>1 : # si la cause est une cause aggrégée
+                df_filtre_i = df[(df["cause_id"].isin(cause[2])) & (df["metric_id"] == i+1)] # filtration
+                df_aggreg_i = df_filtre_i.groupby(["location_id","location_name", "year"], as_index=False)["value"].sum() # aggrégation
+                df_aggreg_i = df_aggreg_i.assign(metric_id = i+1, metric_name = metric[i] ) # ajout du nom et le numéro de la métrique
+                df_aggreg_i = df_aggreg_i.assign(cause_id = cause[1], cause_name = cause[0])
+                L.append(df_aggreg_i)
+                df_aggreg_var_i = df_filtre_i.groupby(["location_id","location_name", "year"], as_index=False)["var"].sum() # somme des variances
+                df_aggreg_var_i["ecart_type"] = np.sqrt(df_aggreg_var_i["var"]) # écart-type
+                M = 1.96*df_aggreg_var_i["ecart_type"]
 
-            L[3*j+i-1]["lower_bound"] = L[3*j+i-1]["value"] - M # calcul du lower_bound
-            L[3*j+i-1]["upper_bound"] = L[3*j+i-1]["value"] + M # calcul du upper_bound
-        df = df.assign(cause_id = cause[1], cause_name = cause[0])
+                L[3*j+i]["lower_bound"] = L[3*j+i]["value"] - M # calcul du lower_bound
+                L[3*j+i]["upper_bound"] = L[3*j+i]["value"] + M # calcul du upper_bound
+            elif len(cause[2]) == 1 : # si la cause est une cause individuelle
+                df_filtre_i = df[(df["cause_id"].isin(cause[2])) & (df["metric_id"] == i+1)] # filtration
+                df_filtre_i = df_filtre_i.assign(cause_id = cause[1], cause_name = cause[0])
+                L.append(df_filtre_i)
     return(pd.concat(L, ignore_index=True)) # renvoie le dataframe concaténé
 
 #fonction qui prend un dataframe en argument, une année et une métrique et renvoie ce dataframe pour les années au dessus de l'année et pour la métrique choisie.
-def filtrage_dataframe(df, annee, metric) :
-    df_filtre = df[(df["year"] >= annee) & (df["metric_name"] == metric)]
+def filtrage_dataframe(df, annee, metric_id) :
+    df_filtre = df[(df["year"] >= annee) & (df["metric_id"] == metric_id)].copy() # filtration du dataframe
     return df_filtre
 
 ##### Fonctions pour les deux datafrmes 
 
-# Fonction qui prend en argument un dataframe et le nom de la colonne des pays et renvoie le même dtaframe avec le numéro d'identité du pays correspondant à chaque pays par order alphabétique.
-def ajout_numero_pays(df, nom_colonne) :
-    df_pays = df[[nom_colonne]].drop_duplicates().sort_values(by=nom_colonne).reset_index(drop=True) # dataframe avec une occurence de chaucun des pays triés par ordre alphabétique
-    df_pays["location_id"] = df_pays.index + 1 # ajout du numéro d'identité du pays
-    df = df.merge(df_pays, on=nom_colonne, how="left") # fusion des deux dataframes
+# Fonction qui prend en argument un dataframe et le nom de la colonne des pays et renvoie le même dataframe avec le numéro d'identité du pays correspondant à chaque pays par ordre alphabétique.
+def ajout_numero_pays(df, nom_colonne_pays, nom_colonne_id_pays) :
+    df_court = df.drop(columns=[nom_colonne_id_pays])
+    df_pays = df_court[[nom_colonne_pays]].drop_duplicates().sort_values(by=nom_colonne_pays).reset_index(drop=True) # dataframe avec une occurence de chaucun des pays triés par ordre alphabétique
+    df_pays[nom_colonne_id_pays] = df_pays.index + 1 # ajout du numéro d'identité du pays
+    df = df_court.merge(df_pays, on=nom_colonne_pays, how="right") # fusion des deux dataframes
     return df
     
-    
+
