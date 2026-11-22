@@ -1,5 +1,7 @@
 ################### Etude corrélations par cause et chômage
 import pandas as pd
+import numpy as np
+import statsmodels.formula.api as smf
 
 def correlation_par_cause(df, x, y):
     df = df.dropna(subset=[x, y]).sort_values(["cause_name", "location_id", "year"]).copy()
@@ -18,3 +20,12 @@ def correlation_par_cause(df, x, y):
         "corr_variation": corr_variation,
     })
     return df_corr.round(2)
+
+
+def regression(df, cause, x="Taux_chômage"):
+    df_cause = df[df["cause_name"]==cause].dropna(subset=["value", x]).copy()
+    df_cause["log_value"]=np.log(df_cause["value"])
+    df_cause = df_cause.rename(columns={x: "chomage"})
+
+    modele=smf.ols("log_value~chomage+C(location_id)+C(year)", data=df_cause).fit(cov_type="cluster", cov_kwds={"groups": df_cause["location_id"]})
+    return modele.params["chomage"], modele.pvalues["chomage"]
