@@ -15,13 +15,10 @@ def plot_mortalite_chomage_pays(df,liste_pays) :
         
         # selection des informations utiles
         df_utile = df[(df["cause_name"] == "All causes") & (df["location_name"] == liste_pays[i])]
-        df_utile = df_utile.dropna(subset=["taux_mortalite", "Taux_chômage"])
-
-        # mortalité en pour 100 000 et non en pourcentage
-        df_utile = df_utile.assign(mortalite_100k=df_utile["taux_mortalite"] * 1000) 
+        df_utile = df_utile.dropna(subset=["value", "Taux_chômage"])
 
         # Calcul de la régression
-        modele = smf.ols("mortalite_100k ~ Taux_chômage", data=df_utile).fit()
+        modele = smf.ols("value ~ Taux_chômage", data=df_utile).fit()
         xs = np.linspace(df_utile["Taux_chômage"].min(), df_utile["Taux_chômage"].max(), 100)
         pred = modele.predict({"Taux_chômage": xs})
         a = modele.params["Taux_chômage"]
@@ -32,7 +29,7 @@ def plot_mortalite_chomage_pays(df,liste_pays) :
 
         # affichage
 
-        plt.scatter(df_utile["Taux_chômage"], df_utile["mortalite_100k"], alpha=0.7, color = couleurs[i])
+        plt.scatter(df_utile["Taux_chômage"], df_utile["value"], alpha=0.7, color = couleurs[i])
         plt.plot(xs, pred, color=couleurs[i],label=f"{liste_pays[i]} : {equation} (R² = {modele.rsquared:.2f})")
 
     plt.xlabel("Taux de chômage (%)")
@@ -51,13 +48,10 @@ def plot_mortalite_chomage_annee(df,liste_annee) :
         
         # selection des informations utiles
         df_utile = df[(df["cause_name"] == "All causes") & (df["year"] == liste_annee[i])]
-        df_utile = df_utile.dropna(subset=["taux_mortalite", "Taux_chômage"])
-
-        # mortalité en pour 100 000 et non en pourcentage
-        df_utile = df_utile.assign(mortalite_100k=df_utile["taux_mortalite"] * 1000) 
+        df_utile = df_utile.dropna(subset=["value", "Taux_chômage"])
 
         # Calcul de la régression
-        modele = smf.ols("mortalite_100k ~ Taux_chômage", data=df_utile).fit()
+        modele = smf.ols("value ~ Taux_chômage", data=df_utile).fit()
         xs = np.linspace(df_utile["Taux_chômage"].min(), df_utile["Taux_chômage"].max(), 100)
         pred = modele.predict({"Taux_chômage": xs})
         a = modele.params["Taux_chômage"]
@@ -68,7 +62,7 @@ def plot_mortalite_chomage_annee(df,liste_annee) :
 
         # affichage
 
-        plt.scatter(df_utile["Taux_chômage"], df_utile["mortalite_100k"], alpha=0.7, color = couleurs[i])
+        plt.scatter(df_utile["Taux_chômage"], df_utile["value"], alpha=0.7, color = couleurs[i])
         plt.plot(xs, pred, color=couleurs[i],label=f"{liste_annee[i]} : {equation} (R² = {modele.rsquared:.2f})")
 
     plt.xlabel("Taux de chômage (%)")
@@ -86,13 +80,10 @@ def plot_coeff_reg_mortalite_chomage(df) :
         
         # selection des informations utiles
         df_utile = df[(df["cause_name"] == "All causes") & (df["year"] == i)]
-        df_utile = df_utile.dropna(subset=["taux_mortalite", "Taux_chômage"])
-
-        # mortalité en pour 100 000 et non en pourcentage
-        df_utile = df_utile.assign(mortalite_100k=df_utile["taux_mortalite"] * 1000) 
+        df_utile = df_utile.dropna(subset=["value", "Taux_chômage"])
 
         # Calcul de la régression
-        modele = smf.ols("mortalite_100k ~ Taux_chômage", data=df_utile).fit()
+        modele = smf.ols("value ~ Taux_chômage", data=df_utile).fit()
         coef.append(modele.params["Taux_chômage"])
         annee.append(i)
 
