@@ -23,8 +23,8 @@ def correlation_par_cause(df, x, y):
 
 
 def regression(df, cause, x="Taux_chômage"):
-    df_cause = df[df["cause_name"]==cause].dropna(subset=["value", x]).copy()
-    df_cause["log_value"]=np.log(df_cause["value"])
+    df_cause = df[df["cause_name"]==cause].dropna(subset=["taux_mortalite", x]).copy()
+    df_cause["log_value"]=np.log(df_cause["taux_mortalite"])
     df_cause = df_cause.rename(columns={x: "chomage"})
 
     modele=smf.ols("log_value~chomage+C(location_id)+C(year)", data=df_cause).fit(cov_type="cluster", cov_kwds={"groups": df_cause["location_id"]})
