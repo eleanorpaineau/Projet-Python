@@ -265,7 +265,8 @@ def plot_mortalite_demographie_pays(df, mesure, cause_id, location_ids) :
         plt.legend(loc='upper right', bbox_to_anchor=(1.5+0.4*ceil(N/14), 1), ncol=ceil(N/14), fancybox=True, shadow=True)
     plt.show()
     
-    
+
+""" 
 # Calcul régression finale
 def regression(df, cause_id, var_controles, location_ids, year_min=1991): 
     df_filtre = df[(df["year"] >= year_min) & (df["cause_id"] == cause_id) & df["location_id"].isin(location_ids)].copy()
@@ -284,3 +285,130 @@ def regression(df, cause_id, var_controles, location_ids, year_min=1991):
     modele = smf.ols(formula=reg, data=df_reg)
     results = modele.fit(cov_type="cluster", cov_kwds={"groups": df_reg["l"]})
     return results
+"""
+
+
+################### Etude corrélations par cause et chômage
+import pandas as pd
+import numpy as np
+import statsmodels.formula.api as smf
+
+def correlation_par_cause(df, x, y):
+    df = df.dropna(subset=[x, y]).sort_values(["cause_name", "location_id", "year"]).copy()
+    df_cause = df.groupby(["cause_name", "location_id"])
+
+    df["variation_mortalite"] = df_cause[y].pct_change() * 100
+    df["variation_chomage"] = df_cause[x].diff()
+
+    # matrices 2x2 par cause, puis on garde la case (ligne y, colonne x)
+    corr_niveaux = df.groupby("cause_name")[[x, y]].corr().xs(y, level=1)[x]
+    corr_variation = (df.groupby("cause_name")[["variation_chomage", "variation_mortalite"]]
+                        .corr().xs("variation_mortalite", level=1)["variation_chomage"])
+
+    df_corr = pd.DataFrame({
+        "corr_niveaux": corr_niveaux,
+        "corr_variation": corr_variation,
+    })
+    return df_corr.round(2)
+
+
+def regression(df, cause, x="Taux_chômage"):
+    df_cause = df[df["cause_name"]==cause].dropna(subset=["taux_mortalite", x]).copy()
+    df_cause["log_value"]=np.log(df_cause["taux_mortalite"])
+    df_cause = df_cause.rename(columns={x: "chomage"})
+
+    modele=smf.ols("log_value~chomage+C(location_id)+C(year)", data=df_cause).fit(cov_type="cluster", cov_kwds={"groups": df_cause["location_id"]})
+    return modele.params["chomage"], modele.pvalues["chomage"]
+
+
+def regression_ruhm(df, cause, x="Taux_chômage"):
+    df_cause = df[df["cause_name"] == cause].dropna(subset=["taux_mortalite", x, "Pourcentage_pop_65plus", "Population"]).copy()
+    df_cause["log_value"] = np.log(df_cause["taux_mortalite"])
+    df_cause = df_cause.rename(columns={x: "chomage" })
+
+    modele = smf.wls("log_value ~ chomage + Pourcentage_pop_65plus + C(location_id) + C(year)+ C(location_id):year",
+        data=df_cause, weights=np.sqrt(df_cause["Population"])).fit(cov_type="cluster", cov_kwds={"groups": df_cause["location_id"]})
+    
+    return modele.params["chomage"], modele.pvalues["chomage"]
+
+
+############ Histogrammes répartition moyenne
+
+def _grille(n, ncols=3, hauteur_ligne=3.5, largeur=14):
+    """Crée une grille de n graphiques et masque les cases vides."""
+    nrows = int(np.ceil(n / ncols))
+    fig, axes = plt.subplots(nrows, ncols, figsize=(largeur, hauteur_ligne * nrows))
+    axes = np.atleast_1d(axes).flatten()
+    for ax in axes[n:]:
+        ax.axis("off")
+    return fig, axes
+
+
+def histogrammes_moyennes(df, variables, groupe="location_name", ncols=3, bins=8, afficher=True):
+    fig, axes = _grille(len(variables), ncols)          # <- ici
+
+    for ax, (col, titre) in zip(axes, variables.items()):
+        moyennes = df.groupby(groupe)[col].mean().dropna()
+        ax.hist(moyennes, bins=bins, edgecolor="white")
+        ax.set_title(f"{titre}\n(moyenne par pays, n = {len(moyennes)})", fontsize=10)
+        ax.set_ylabel("Nombre de pays")
+
+    fig.tight_layout()
+    if afficher:
+        plt.show()
+    return fig, axes
+
+
+def evolutions_moyennes(df, variables, temps="year", ncols=3, afficher=True):
+    fig, axes = _grille(len(variables), ncols)          # <- et ici
+
+    for ax, (col, titre) in zip(axes, variables.items()):
+        df.groupby(temps)[col].mean().plot(ax=ax)
+        ax.set_title(f"{titre}\n(moyenne annuelle sur les pays)", fontsize=10)
+        ax.set_xlabel("Année")
+        ax.set_ylabel(titre)
+        ax.grid(alpha=0.3)
+
+    fig.tight_layout()
+    if afficher:
+        plt.show()
+    return fig, axes
+
+
+from matplotlib.lines import Line2D
+
+
+def evolutions_par_pays(df, variables, mis_en_avant, pays="location_name", temps="year", ncols=3, palette=plt.cm.tab10.colors, afficher=True):
+    """
+    Trace l'évolution de chaque variable pour tous les pays :
+    les pays de `mis_en_avant` en couleur, les autres en gris.
+    """
+    # on ignore les pays demandés absents du DataFrame (sinon KeyError)
+    presents = set(df[pays].unique())
+    mis_en_avant = [p for p in mis_en_avant if p in presents]
+    couleurs = dict(zip(mis_en_avant, palette))
+
+    fig, axes = _grille(len(variables), ncols)
+
+    for ax, (col, titre) in zip(axes, variables.items()):
+        pivot = df.pivot(index=temps, columns=pays, values=col)
+
+        pivot.drop(columns=mis_en_avant).plot(ax=ax, color="lightgrey",
+                                              legend=False, linewidth=1)
+        pivot[mis_en_avant].plot(ax=ax, color=[couleurs[p] for p in mis_en_avant],
+                                 legend=False, linewidth=2)
+
+        ax.set_title(titre, fontsize=10)
+        ax.set_xlabel("Année")
+        ax.set_ylabel(titre)
+        ax.grid(alpha=0.3)
+
+    handles = [Line2D([0], [0], color=couleurs[p], linewidth=2) for p in mis_en_avant]
+    handles.append(Line2D([0], [0], color="lightgrey", linewidth=1))
+    fig.legend(handles, mis_en_avant + ["Autres pays"], title="Pays",
+               loc="lower center", ncol=len(handles))
+
+    fig.tight_layout(rect=[0, 0.06, 1, 1])   # place en bas pour la légende
+    if afficher:
+        plt.show()
+    return fig, axes
