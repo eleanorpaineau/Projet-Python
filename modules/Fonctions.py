@@ -5,7 +5,8 @@ from math import ceil
 import wbgapi as wb
 import pandas as pd
 from pathlib import Path
-from functools import reduce
+from matplotlib.lines import Line2D
+
 
 ### Constantes
 
@@ -135,56 +136,98 @@ def taux_croissance_dataframe_WB(df, indicateurs_vers_croissance, group_by): #aj
 
 ########################## Fonctions pour les figures
 
+##### Fonctions pour les figures du dataframe de GBD
 
 #Fonction qui permet de créer un sous dataframe à partir d'un datafram original, d'une métrique, d'une cause et d'un pays
 #Cela permet de ne garder que l'évolution d'une cause précise pour un pays et une métrique donnés
-
-
-def sous_dataframe(df, metric_id, cause_id, location_id) :
-    df_sous = df[(df["metric_id"] == metric_id) & (df["cause_id"] == cause_id) & (df["location_id"] == location_id)]
+def sous_dataframe(df, cause_id, location_id) :
+    df_sous = df[(df["cause_id"] == cause_id) & (df["location_id"] == location_id)]
     return(df_sous)
 
 #fonction qui dessine le tabeleau ci-dessus
-def plot_dataframe(df, metric_id, cause_id, location_id) :
-    df_sous = sous_dataframe(df, metric_id, cause_id, location_id)
+def plot_dataframe(df, cause_id, location_id) :
+    df_sous = sous_dataframe(df, cause_id, location_id)
     plt.figure()
-    plt.plot(df_sous["year"], df_sous["value"], marker='o', label='Value')
+    plt.plot(df_sous["year"], df_sous["taux_mortalite"], marker='o', label='Value')
     plt.fill_between(df_sous["year"], df_sous["lower_bound"], df_sous["upper_bound"], color='gray', alpha=0.2, label='Standard error')
-    plt.title(f"Evolution of {df_sous['cause_name'].iloc[0]} in {df_sous['location_name'].iloc[0]} ({df_sous['metric_name'].iloc[0]})")
+    plt.title(f"Evolution of mortality rate of {df_sous['cause_name'].iloc[0]} in {df_sous['location_name'].iloc[0]}")
     plt.xlabel("Time (Year)")
-    plt.ylabel("Value (number of deaths per 100,000 population)")
+    plt.ylabel("Mortality Rate (number of deaths per 100,000 population)")
     plt.legend(loc='upper right', bbox_to_anchor=(1.5, 1),
           ncol=1, fancybox=True, shadow=True)    
     plt.grid()
     plt.show()
     
 #Fonction qui plot sur un même graphique l'évolution d'une cause pour N pays dont l'id_location est dans une liste
-def plot_dataframe_multiple_countries(df, metric_id, cause_id, location_ids):
+def plot_dataframe_multiple_countries(df, cause_id, location_ids):
     N=len(location_ids)
     plt.figure()
     for location_id in location_ids:
-         df_sous = sous_dataframe(df, metric_id, cause_id, location_id)
-         plt.plot(df_sous["year"], df_sous["value"], marker='o', label=f"{df_sous['location_name'].iloc[0]}")
+         df_sous = sous_dataframe(df, cause_id, location_id)
+         plt.plot(df_sous["year"], df_sous["taux_mortalite"], marker='o', label=f"{df_sous['location_name'].iloc[0]}")
          plt.fill_between(df_sous["year"], df_sous["lower_bound"], df_sous["upper_bound"], color='gray', alpha=0.2)
-    plt.title(f"Evolution of {df_sous['cause_name'].iloc[0]} ({df_sous['metric_name'].iloc[0]})")
+    plt.title(f"Evolution of mortality rate of {df_sous['cause_name'].iloc[0]}")
     plt.xlabel("Time (Year)")
-    plt.ylabel("Value (number of deaths per 100,000 population)")
+    plt.ylabel("Mortality Rate (number of deaths per 100,000 population)")
     plt.legend(loc='upper right', bbox_to_anchor=(1+0.4*ceil(N/14), 1),
           ncol=ceil(N/14), fancybox=True, shadow=True)
     plt.grid()
     plt.show()
   
 # Fonction qui plot sur un même graphique l'évolution de N causes pour un pays dont l'id_location est donnée   
-def plot_dataframe_multiple_causes(df, metric_id, cause_ids, location_id):
+def plot_dataframe_multiple_causes(df, cause_ids, location_id):
     plt.figure()
     for cause_id in cause_ids:
-        df_sous = sous_dataframe(df, metric_id, cause_id, location_id)
-        plt.plot(df_sous["year"], df_sous["value"], marker='o', label=f"{df_sous['cause_name'].iloc[0]}")
+        df_sous = sous_dataframe(df, cause_id, location_id)
+        plt.plot(df_sous["year"], df_sous["taux_mortalite"], marker='o', label=f"{df_sous['cause_name'].iloc[0]}")
         plt.fill_between(df_sous["year"], df_sous["lower_bound"], df_sous["upper_bound"], color='gray', alpha=0.2)
-    plt.title(f"Evolution of causes in {df_sous['location_name'].iloc[0]} ({df_sous['metric_name'].iloc[0]})")
+    plt.title(f"Evolution of mortality rates of death causes in {df_sous['location_name'].iloc[0]}")
     plt.xlabel("Time (Year)")
-    plt.ylabel("Value (number of deaths per 100,000 population)")
+    plt.ylabel("Mortality Rate (number of deaths per 100,000 population)")
     plt.legend(loc='upper right', bbox_to_anchor=(1.5, 1),
           ncol=1, fancybox=True, shadow=True)
     plt.grid()
     plt.show()
+    
+
+
+##### Fonctions pour les figures du dataframe de World Bank
+
+
+
+
+
+
+mis_en_avant = ["FRA", "DEU", "USA", "GRC", "KOR", "LVA"]
+couleurs = dict(zip(mis_en_avant, plt.cm.tab10.colors))  
+
+n = len(variables)
+ncols = 3
+nrows = -(-n // ncols)  # division arrondie au supérieur
+
+fig, axes = plt.subplots(nrows, ncols, figsize=(14, 3.5 * nrows))
+axes = axes.flatten()
+
+for ax, (col, titre) in zip(axes, variables.items()):
+    pivot = df_eco.pivot(index="year", columns="economy", values=col)
+
+    # fond : tous les autres pays en gris
+    pivot.drop(columns=mis_en_avant).plot(ax=ax, color="lightgrey", legend=False, linewidth=1)
+    # premier plan : pays mis en avant, avec leur couleur fixe
+    pivot[mis_en_avant].plot(ax=ax, color=[couleurs[p] for p in mis_en_avant],
+                             legend=False, linewidth=2)
+
+    ax.set_title(titre)
+    ax.set_xlabel("Année")
+    ax.set_ylabel(titre)
+
+for ax in axes[n:]:
+    ax.axis("off")
+
+# légende construite à la main, indépendante des subplots
+handles = [Line2D([0], [0], color=couleurs[p], linewidth=2) for p in mis_en_avant]
+fig.legend(handles, mis_en_avant, title="Pays", loc="lower center",
+           ncol=len(mis_en_avant), bbox_to_anchor=(0.5, -0.02))
+
+plt.tight_layout()
+plt.show()
