@@ -81,7 +81,12 @@ def passage_en_numerique(df_GBD):
     return df_GBD_modifie
 
 # fonction qui prend en argument un dataframe, la liste de listes des causes associées aux causes générales et renvoie un dataframe qui contient le pays, l'année,la métrique, les valeurs aggrégées, et les lower_bound et upper_bound.
+# pour le calcul de l'intervalle de confiance : méthode des variances
+# - on calcule l'écart type (SE) aggrégé pour chaque cause générale : il s'agit de la racine de la somme des variances de chaque cause 
+# - l'intervale de confiance correspond à la somme des estimations ± 1,96 × SE
+# - on obtient alors : upperbound = value + 1,96 × SE    &    lowerbound = value - 1,96 × SE 
 
+Le code suivant implémente ce calcul.
 def transformations_dataframe_GBD(df, causes_generales, metric) :
     L = [] # initialisation de la liste
     for j in range(len(causes_generales)) : # pour chaque cause générale
