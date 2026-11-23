@@ -360,7 +360,6 @@ def histogrammes_moyennes(df, variables, groupe="location_name", ncols=3, bins=8
     fig.tight_layout()
     if afficher:
         plt.show()
-    return fig, axes
 
 
 def evolutions_moyennes(df, variables, temps="year", ncols=3, afficher=True):
@@ -376,10 +375,6 @@ def evolutions_moyennes(df, variables, temps="year", ncols=3, afficher=True):
     fig.tight_layout()
     if afficher:
         plt.show()
-    return fig, axes
-
-
-from matplotlib.lines import Line2D
 
 
 def evolutions_par_pays(df, variables, mis_en_avant, pays="location_name", temps="year", ncols=3, palette=plt.cm.tab10.colors, afficher=True):
@@ -414,4 +409,3 @@ def evolutions_par_pays(df, variables, mis_en_avant, pays="location_name", temps
     fig.tight_layout(rect=[0, 0.06, 1, 1])   # place en bas pour la légende
     if afficher:
         plt.show()
-    return fig, axes
