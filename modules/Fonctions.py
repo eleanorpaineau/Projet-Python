@@ -321,13 +321,13 @@ def regression(df, cause, x="Taux_chômage"):
     return modele.params["chomage"], modele.pvalues["chomage"]
 
 
-def regression_rhume(df, cause, x="Taux_chômage"):
-    df_cause = df[df["cause_name"] == cause].dropna(subset=["taux_mortalite", x, "Pourcentage_pop_65plus"]).copy()
+def regression_ruhm(df, cause, x="Taux_chômage"):
+    df_cause = df[df["cause_name"] == cause].dropna(subset=["taux_mortalite", x, "Pourcentage_pop_65plus", "Population"]).copy()
     df_cause["log_value"] = np.log(df_cause["taux_mortalite"])
     df_cause = df_cause.rename(columns={x: "chomage" })
 
-    modele = smf.ols("log_value ~ chomage + Pourcentage_pop_65plus + C(location_id) + C(year)",
-        data=df_cause).fit(cov_type="cluster", cov_kwds={"groups": df_cause["location_id"]})
+    modele = smf.wls("log_value ~ chomage + Pourcentage_pop_65plus + C(location_id) + C(year)+ C(location_id):year",
+        data=df_cause, weights=np.sqrt(df_cause["Population"])).fit(cov_type="cluster", cov_kwds={"groups": df_cause["location_id"]})
     
     return modele.params["chomage"], modele.pvalues["chomage"]
 
