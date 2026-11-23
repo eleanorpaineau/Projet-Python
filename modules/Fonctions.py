@@ -267,6 +267,20 @@ def plot_mortalite_demographie_pays(df, mesure, cause_id, location_ids) :
     
     
 # Calcul régression finale
-def regression(df, var_dependante, var_controles, location_ids, year_min=1991): 
-    str_controles = "+".join(var_controles)
+def regression(df, cause_id, var_controles, location_ids, year_min=1991): 
+    df_filtre = df[(df["year"] >= year_min) & (df["cause_id"] == cause_id) & df["location_id"].isin(location_ids)].copy()
     
+    df_filtre["m"] = np.log(pd.to_numeric(df_filtre["taux_mortalite"], errors="coerce"))
+    df_filtre["t"] = pd.to_numeric(df_filtre["year"], errors="coerce") - year_min
+    for var in var_controles:
+        df_filtre[var] = pd.to_numeric(df_filtre[var], errors="coerce")
+    cols_requises = ["m", "t"] + var_controles
+    
+    for 
+    df_reg = df_filtre.dropna(subset=cols_requises).copy()
+
+    str_controles = " + ".join([f'Q("{var}")' for var in var_controles])
+    reg = f"m ~ {str_controles} + C(y) + C(l) + C(l):t"
+    modele = smf.ols(formula=reg, data=df_reg)
+    results = modele.fit(cov_type="cluster", cov_kwds={"groups": df_reg["l"]})
+    return results
