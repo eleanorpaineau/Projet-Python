@@ -86,7 +86,6 @@ def passage_en_numerique(df_GBD):
 # - l'intervale de confiance correspond à la somme des estimations ± 1,96 × SE
 # - on obtient alors : upperbound = value + 1,96 × SE    &    lowerbound = value - 1,96 × SE 
 
-Le code suivant implémente ce calcul.
 def transformations_dataframe_GBD(df, causes_generales, metric) :
     L = [] # initialisation de la liste
     for j in range(len(causes_generales)) : # pour chaque cause générale
