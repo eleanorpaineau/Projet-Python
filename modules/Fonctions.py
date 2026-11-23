@@ -345,7 +345,7 @@ def _grille(n, ncols=3, hauteur_ligne=3.5, largeur=14):
 
 
 def histogrammes_moyennes(df, variables, groupe="location_name", ncols=3, bins=8, afficher=True):
-    fig, axes = _grille(len(variables), ncols)          # <- ici
+    fig, axes = _grille(len(variables), ncols)         
 
     for ax, (col, titre) in zip(axes, variables.items()):
         moyennes = df.groupby(groupe)[col].mean().dropna()
@@ -360,7 +360,7 @@ def histogrammes_moyennes(df, variables, groupe="location_name", ncols=3, bins=8
 
 
 def evolutions_moyennes(df, variables, temps="year", ncols=3, afficher=True):
-    fig, axes = _grille(len(variables), ncols)          # <- et ici
+    fig, axes = _grille(len(variables), ncols)    
 
     for ax, (col, titre) in zip(axes, variables.items()):
         df.groupby(temps)[col].mean().plot(ax=ax)
@@ -383,7 +383,6 @@ def evolutions_par_pays(df, variables, mis_en_avant, pays="location_name", temps
     Trace l'évolution de chaque variable pour tous les pays :
     les pays de `mis_en_avant` en couleur, les autres en gris.
     """
-    # on ignore les pays demandés absents du DataFrame (sinon KeyError)
     presents = set(df[pays].unique())
     mis_en_avant = [p for p in mis_en_avant if p in presents]
     couleurs = dict(zip(mis_en_avant, palette))
