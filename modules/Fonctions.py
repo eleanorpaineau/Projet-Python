@@ -6,6 +6,7 @@ import wbgapi as wb
 import pandas as pd
 from pathlib import Path
 from matplotlib.lines import Line2D
+import statsmodels.formula.api as smf
 
 
 ### Constantes
@@ -140,13 +141,13 @@ def taux_croissance_dataframe_WB(df, indicateurs_vers_croissance, group_by): #aj
 
 #Fonction qui permet de créer un sous dataframe à partir d'un dataframe original, d'une cause et d'un pays
 #Cela permet de ne garder que l'évolution d'une cause précise pour un pays donné
-def sous_dataframe(df, cause_id, location_id) :
+def sous_dataframe_GBD(df, cause_id, location_id) :
     df_sous = df[(df["cause_id"] == cause_id) & (df["location_id"] == location_id)]
     return(df_sous)
 
 #fonction qui dessine le tabeleau ci-dessus
 def plot_dataframe(df, cause_id, location_id) :
-    df_sous = sous_dataframe(df, cause_id, location_id)
+    df_sous = sous_dataframe_GBD(df, cause_id, location_id)
     plt.figure()
     plt.plot(df_sous["year"], df_sous["taux_mortalite"], marker='o')
     plt.fill_between(df_sous["year"], df_sous["lower_bound"], df_sous["upper_bound"], color='gray', alpha=0.2, label='Standard error')
@@ -159,11 +160,11 @@ def plot_dataframe(df, cause_id, location_id) :
     plt.show()
     
 #Fonction qui plot sur un même graphique l'évolution d'une cause pour N pays dont l'id_location est dans une liste
-def plot_dataframe_multiple_countries(df, cause_id, location_ids):
+def plot_dataframe_multiple_countries_GBD(df, cause_id, location_ids):
     N=len(location_ids)
     plt.figure()
     for location_id in location_ids:
-         df_sous = sous_dataframe(df, cause_id, location_id)
+         df_sous = sous_dataframe_GBD(df, cause_id, location_id)
          plt.plot(df_sous["year"], df_sous["taux_mortalite"], marker='o', label=f"{df_sous['location_name'].iloc[0]}")
          plt.fill_between(df_sous["year"], df_sous["lower_bound"], df_sous["upper_bound"], color='gray', alpha=0.2)
     plt.title(f"Evolution of mortality rate of {df_sous['cause_name'].iloc[0]}")
@@ -175,10 +176,10 @@ def plot_dataframe_multiple_countries(df, cause_id, location_ids):
     plt.show()
   
 # Fonction qui plot sur un même graphique l'évolution de N causes pour un pays dont l'id_location est donnée   
-def plot_dataframe_multiple_causes(df, cause_ids, location_id):
+def plot_dataframe_multiple_causes_GBD(df, cause_ids, location_id):
     plt.figure()
     for cause_id in cause_ids:
-        df_sous = sous_dataframe(df, cause_id, location_id)
+        df_sous = sous_dataframe_GBD(df, cause_id, location_id)
         plt.plot(df_sous["year"], df_sous["taux_mortalite"], marker='o', label=f"{df_sous['cause_name'].iloc[0]}")
         plt.fill_between(df_sous["year"], df_sous["lower_bound"], df_sous["upper_bound"], color='gray', alpha=0.2)
     plt.title(f"Evolution of mortality rates of death causes in {df_sous['location_name'].iloc[0]}")
@@ -223,4 +224,43 @@ def plot_dataframe_multiple_countries_WB(df, mesure, location_ids):
     plt.ylabel(f"{mesure}")
     plt.legend(loc='upper right', bbox_to_anchor=(1+0.4*ceil(N/14), 1), ncol=ceil(N/14), fancybox=True, shadow=True)
     plt.grid()
+    plt.show()
+
+
+##### Fonctions pour les figures du dataframe final
+
+def sous_dataframe_final(df, mesure, cause_id, location_id) :
+    if not isinstance(mesure, str):
+        mesure=str(mesure)
+    df_sous = df[(df["cause_id"] == cause_id) & (df["location_id"] == location_id)]
+    return(df_sous[["location_id", "location_name", "year", "cause_id", "cause_name", "taux_mortalite", mesure]])
+
+def plot_mortalite_demographie_pays(df, mesure, cause_id, location_ids) : 
+    plt.figure()
+    N=len(location_ids)
+    for location_id in location_ids:     
+        # selection des informations utiles
+        df_sous = sous_dataframe_final(df, mesure, cause_id, location_id)
+        df_reg = pd.DataFrame({
+            "y": pd.to_numeric(df_sous["taux_mortalite"], errors="coerce"),
+            "x": pd.to_numeric(df_sous[mesure], errors="coerce"),
+        })
+
+        # Calcul de la régression
+        modele = smf.ols('y ~ x', data=df_reg).fit()
+        xs = np.linspace(df_reg["x"].min(), df_reg["x"].max(), 100)
+        a = modele.params["x"]
+        b = modele.params["Intercept"]
+        signe = "+" if b >= 0 else "-"
+        equation = f"y = {a:.3g}x {signe} {abs(b):.3g}"
+        pred = a * xs + b
+
+        # affichage
+        plt.scatter(df_sous[mesure], df_sous["taux_mortalite"], alpha=0.7, label=f"{df_sous['location_name'].iloc[0]}")
+        plt.plot(xs, pred,label=f"{df_sous['location_name'].iloc[0]} : {equation} (R² = {modele.rsquared:.2f})")
+
+        plt.xlabel(f"{mesure}")
+        plt.ylabel("Taux de mortalité (pour 100 000)")
+        plt.title(f"{df_sous['cause_name'].iloc[0]} en fonction du {mesure}")
+        plt.legend(loc='upper right', bbox_to_anchor=(1.5+0.4*ceil(N/14), 1), ncol=ceil(N/14), fancybox=True, shadow=True)
     plt.show()
