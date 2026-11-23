@@ -138,8 +138,8 @@ def taux_croissance_dataframe_WB(df, indicateurs_vers_croissance, group_by): #aj
 
 ##### Fonctions pour les figures du dataframe de GBD
 
-#Fonction qui permet de créer un sous dataframe à partir d'un datafram original, d'une métrique, d'une cause et d'un pays
-#Cela permet de ne garder que l'évolution d'une cause précise pour un pays et une métrique donnés
+#Fonction qui permet de créer un sous dataframe à partir d'un dataframe original, d'une cause et d'un pays
+#Cela permet de ne garder que l'évolution d'une cause précise pour un pays donné
 def sous_dataframe(df, cause_id, location_id) :
     df_sous = df[(df["cause_id"] == cause_id) & (df["location_id"] == location_id)]
     return(df_sous)
@@ -148,7 +148,7 @@ def sous_dataframe(df, cause_id, location_id) :
 def plot_dataframe(df, cause_id, location_id) :
     df_sous = sous_dataframe(df, cause_id, location_id)
     plt.figure()
-    plt.plot(df_sous["year"], df_sous["taux_mortalite"], marker='o', label='Value')
+    plt.plot(df_sous["year"], df_sous["taux_mortalite"], marker='o')
     plt.fill_between(df_sous["year"], df_sous["lower_bound"], df_sous["upper_bound"], color='gray', alpha=0.2, label='Standard error')
     plt.title(f"Evolution of mortality rate of {df_sous['cause_name'].iloc[0]} in {df_sous['location_name'].iloc[0]}")
     plt.xlabel("Time (Year)")
@@ -188,46 +188,39 @@ def plot_dataframe_multiple_causes(df, cause_ids, location_id):
           ncol=1, fancybox=True, shadow=True)
     plt.grid()
     plt.show()
-    
 
 
 ##### Fonctions pour les figures du dataframe de World Bank
 
+#Fonction qui permet de plot un sous dataframe à partir d'un dataframe original d'un pays et d'une mesure démographique
+#Cela permet de ne garder que l'évolution d'une mesure démographique précise pour un pays donné
+def sous_dataframe_WB(df, mesure, location_id) :
+    if not isinstance(mesure, str):
+        mesure=str(mesure)
+    df_sous = df[(df["location_id"] == location_id)]
+    return( df_sous[["location_id", "location_name", "year", mesure]])
 
+def plot_dataframe_WB(df, mesure, location_id):
+    df_mesure = sous_dataframe_WB(df, mesure, location_id)
+    plt.figure()
+    plt.plot(df_mesure["year"], df_mesure[mesure], marker='o', label='Value')
+    plt.title(f"Evolution of {mesure} in {df_mesure['location_name'].iloc[0]}")
+    plt.xlabel("Time (Year)")
+    plt.ylabel(f"{mesure}")
+    plt.legend(loc='upper right', bbox_to_anchor=(1.5, 1),
+          ncol=1, fancybox=True, shadow=True)    
+    plt.grid()
+    plt.show()
 
-
-
-
-mis_en_avant = ["FRA", "DEU", "USA", "GRC", "KOR", "LVA"]
-couleurs = dict(zip(mis_en_avant, plt.cm.tab10.colors))  
-
-n = len(variables)
-ncols = 3
-nrows = -(-n // ncols)  # division arrondie au supérieur
-
-fig, axes = plt.subplots(nrows, ncols, figsize=(14, 3.5 * nrows))
-axes = axes.flatten()
-
-for ax, (col, titre) in zip(axes, variables.items()):
-    pivot = df_eco.pivot(index="year", columns="economy", values=col)
-
-    # fond : tous les autres pays en gris
-    pivot.drop(columns=mis_en_avant).plot(ax=ax, color="lightgrey", legend=False, linewidth=1)
-    # premier plan : pays mis en avant, avec leur couleur fixe
-    pivot[mis_en_avant].plot(ax=ax, color=[couleurs[p] for p in mis_en_avant],
-                             legend=False, linewidth=2)
-
-    ax.set_title(titre)
-    ax.set_xlabel("Année")
-    ax.set_ylabel(titre)
-
-for ax in axes[n:]:
-    ax.axis("off")
-
-# légende construite à la main, indépendante des subplots
-handles = [Line2D([0], [0], color=couleurs[p], linewidth=2) for p in mis_en_avant]
-fig.legend(handles, mis_en_avant, title="Pays", loc="lower center",
-           ncol=len(mis_en_avant), bbox_to_anchor=(0.5, -0.02))
-
-plt.tight_layout()
-plt.show()
+def plot_dataframe_multiple_countries_WB(df, mesure, location_ids):
+    N=len(location_ids)
+    plt.figure()
+    for location_id in location_ids:
+         df_mesure = sous_dataframe_WB(df, mesure, location_id)
+         plt.plot(df_mesure["year"], df_mesure[mesure], marker='o', label=f"{df_mesure['location_name'].iloc[0]}")
+    plt.title(f"Evolution of {mesure}")
+    plt.xlabel("Time (Year)")
+    plt.ylabel(f"{mesure}")
+    plt.legend(loc='upper right', bbox_to_anchor=(1+0.4*ceil(N/14), 1), ncol=ceil(N/14), fancybox=True, shadow=True)
+    plt.grid()
+    plt.show()
