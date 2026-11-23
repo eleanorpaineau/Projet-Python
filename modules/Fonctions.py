@@ -264,3 +264,9 @@ def plot_mortalite_demographie_pays(df, mesure, cause_id, location_ids) :
         plt.title(f"{df_sous['cause_name'].iloc[0]} en fonction du {mesure}")
         plt.legend(loc='upper right', bbox_to_anchor=(1.5+0.4*ceil(N/14), 1), ncol=ceil(N/14), fancybox=True, shadow=True)
     plt.show()
+    
+    
+# Calcul régression finale
+def regression(df, var_dependante, var_controles, location_ids, year_min=1991): 
+    str_controles = "+".join(var_controles)
+    
