@@ -20,7 +20,7 @@ Pour notre étude, nos données proviennent de deux sources :
 *Précision:* Les données de la Banque mondiale sont téléchargées automatiquement au premier lancement, puis mises en cache dans data_WB/wb_brut.parquet
 
 ## Principaux résultats
-| Cause de décès | Effet d'un point de chômage | |
+| Cause de décès | Effet d'un point de chômage | Significativité |
 |:---|---:|:---:|
 | Accidents de la route | **−0,96 %** | \*\*\* |
 | Autres accidents | **−0,85 %** | \*\*\* |
