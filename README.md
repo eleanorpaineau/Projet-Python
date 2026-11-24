@@ -30,7 +30,7 @@ Pour notre étude, nos données proviennent de deux sources :
 
 <sub>\*\*\* significatif à 1 %, \*\* à 5 %, \* à 10 %. Écarts-types clusterisés par pays.</sub>
 
-- La mortalité est globalement procyclique : elle baisse quand le chômage augmente, comme chez Gerdtham et Ruhm.
+- Certaines causes de décès sont procycliques : elles baissent lorsque le chômage augmente, comme dans l'article de Gerdtham et Ruhm.
 - Le suicide fait exception : il augmente avec le chômage. Mais l'effet varie fortement d'un pays à l'autre : il est quasi nul en France et en Finlande, et nettement positif dans les pays baltes, en Corée et au Japon.
 
 ## Structure du dépôt
