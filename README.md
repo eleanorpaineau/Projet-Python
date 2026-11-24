@@ -20,12 +20,15 @@ Pour notre étude, nos données proviennent de deux sources :
 *Précision:* Les données de la Banque mondiale sont téléchargées automatiquement au premier lancement, puis mises en cache dans data_WB/wb_brut.parquet
 
 ## Principaux résultats
-Cause de décès	Effet d'un point de chômage	Significativité
-Accidents de la route	−0,96 %	p < 0,01
-Autres accidents	−0,85 %	p < 0,01
-Maladies cardiovasculaires	−0,45 %	p < 0,01
-Suicide	+1,02 %	p < 0,01
-Toutes causes	−0,16 %	non significatif
+| Cause de décès | Effet d'un point de chômage | |
+|:---|---:|:---:|
+| Accidents de la route | **−0,96 %** | \*\*\* |
+| Autres accidents | **−0,85 %** | \*\*\* |
+| Maladies cardiovasculaires | **−0,45 %** | \*\*\* |
+| Suicide | **+1,02 %** | \*\*\* |
+| Toutes causes | −0,16 % | |
+
+<sub>\*\*\* significatif à 1 %, \*\* à 5 %, \* à 10 %. Écarts-types clusterisés par pays.</sub>
 
 - La mortalité est globalement procyclique : elle baisse quand le chômage augmente, comme chez Gerdtham et Ruhm.
 - Le suicide fait exception : il augmente avec le chômage. Mais l'effet varie fortement d'un pays à l'autre : il est quasi nul en France et en Finlande, et nettement positif dans les pays baltes, en Corée et au Japon.
