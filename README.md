@@ -26,7 +26,7 @@ Pour notre étude, nos données proviennent de deux sources :
 | Autres accidents | **−0,85 %** | \*\*\* |
 | Maladies cardiovasculaires | **−0,45 %** | \*\*\* |
 | Suicide | **+1,02 %** | \*\*\* |
-| Toutes causes | −0,16 % | |
+| Toutes causes | −0,16 % | / |
 
 <sub>\*\*\* significatif à 1 %, \*\* à 5 %, \* à 10 %. Écarts-types clusterisés par pays.</sub>
 
