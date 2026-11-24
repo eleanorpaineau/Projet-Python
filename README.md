@@ -5,35 +5,37 @@
 
 *Auteurs :  Marie Dominge, Guillaume Gourtay et Eleanor Paineau*
 
-**Les effets des ralentissements économiques entre 1991 et 2023 sont-ils les mêmes que ceux constatés par Gerdtham et Tuhm en 2006 sur la période 1960-1997 ?**
+**Les effets des ralentissements économiques entre 1991 et 2023 sont-ils les mêmes que ceux constatés par Gerdtham et Ruhm en 2006 sur la période 1960-1997 ?**
 
 Pour répondre à cette question, nous nous sommes appuyés sur l'article de 2006 *Deaths rise in good economic times: Evidence from the OECD* de Gerdtham et Ruhm qui s'intéresse au lien entre taux de chômage et mortalité avec des données entre 1960 et 1997 pour 23 pays de l'OCDE.
 
-Nous avons donc étendu l'étude aux 38 pays appartenant à l'OCDE en 2026, et avons poursuivi l'étude sur la période 1991 à 2023, particulièrement intéressante de par les différents grands chocs économiques qui ont marqués ladite période (éclatement de la bulle internet en 2000, crise des subprimes en 2007, crise de la dette souveraine de la zone euro en 2012, pandémie de Covid-19 en 2020).
+Nous avons donc étendu l'étude aux 38 pays appartenant à l'OCDE en 2026, et avons poursuivi l'étude sur la période 1991 à 2023, particulièrement intéressante de par les différents grands chocs économiques qui ont marqué ladite période (éclatement de la bulle internet en 2000, crise des subprimes en 2007, crise de la dette souveraine de la zone euro en 2012, pandémie de Covid-19 en 2020).
 
 ## Données
 
 Pour notre étude, nos données proviennent de deux sources :
-- Les données économiques et démographique (taux de chômage, part des plus de 65 ans dans la population...) proviennent de la World Bank (Banque Mondiale), collectées par API via wbgapi.
+- Les données économiques et démographiques (taux de chômage, part des plus de 65 ans dans la population...) proviennent de la World Bank (Banque Mondiale), collectées par API via wbgapi.
 - Les données relatives à la mortalité proviennent de la base de données Global Burden of Disease (GBD) de l'Institute for Health Metrics and Evaluation.
 
 *Précision:* Les données de la Banque mondiale sont téléchargées automatiquement au premier lancement, puis mises en cache dans data_WB/wb_brut.parquet
 
 ## Méthode
 
-Comme Gerdtham et Ruhm, nous régressons le logarithme du taux de mortalité sur le taux de chômage, avec des effets fixes pays et année, des tendances linéaires propres à chaque pays et un contrôle de la part des 65 ans et plus dans la population. Les observations sont pondérées par la racine carrée de la population.
+Comme Gerdtham et Ruhm, nous régressons le logarithme du taux de mortalité sur le taux de chômage, avec des effets fixes pays et année, des tendances linéaires propres à chaque pays et un contrôle des effets fixes. Les observations sont pondérées par la racine carrée de la population.
+
+Nous essayons également de proposer des variables prédictives supplémentaires.
 
 
 ## Principaux résultats
 | Cause de décès | Effet d'un point de chômage | Significativité |
 |:---|---:|:---:|
-| Accidents de la route | **−0,96 %** | \*\*\* |
+| Accidents de la route | **-1,04 %** | \*\*\* |
 | Autres accidents | **−0,85 %** | \*\*\* |
-| Maladies cardiovasculaires | **−0,45 %** | \*\*\* |
-| Suicide | **+1,02 %** | \*\*\* |
-| Toutes causes | −0,16 % | / |
+| Maladies cardiovasculaires | **−0,55 %** | \*\*\* |
+| Suicide | **+1,07 %** | \*\*\* |
+| Toutes causes | −0,18 % | / |
 
-<sub>\*\*\* significatif à 1 %, \*\* à 5 %, \* à 10 %. Écarts-types clusterisés par pays.</sub>
+<sub>\*\*\* significatif à 1 %, \*\* à 5 %. Écarts-types clusterisés par pays.</sub>
 
 - Certaines causes de décès sont procycliques : elles baissent lorsque le chômage augmente, comme dans l'article de Gerdtham et Ruhm.
 - Le suicide fait exception : il augmente avec le chômage. Mais l'effet varie fortement d'un pays à l'autre : il est quasi nul en France et en Finlande, et nettement positif dans les pays baltes, en Corée et au Japon.
@@ -42,7 +44,7 @@ Comme Gerdtham et Ruhm, nous régressons le logarithme du taux de mortalité sur
 
 Projet-Python/
 - `README.md` : présentation du projet ;
-- `main.ipynb` : notebook principal, rapport analytique et support de restitution ;
+- `notebook_principal.ipynb` : notebook principal, rapport analytique et support de restitution ;
 - `requirements.txt` : liste des dépendances ;
 - `data_WB/` : cache des données Banque mondiale (généré automatiquement) ;
 - `modules/`
