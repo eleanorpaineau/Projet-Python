@@ -19,6 +19,11 @@ Pour notre étude, nos données proviennent de deux sources :
 
 *Précision:* Les données de la Banque mondiale sont téléchargées automatiquement au premier lancement, puis mises en cache dans data_WB/wb_brut.parquet
 
+## Méthode
+
+Comme Gerdtham et Ruhm, nous régressons le logarithme du taux de mortalité sur le taux de chômage, avec des effets fixes pays et année, des tendances linéaires propres à chaque pays et un contrôle de la part des 65 ans et plus dans la population. Les observations sont pondérées par la racine carrée de la population.
+
+
 ## Principaux résultats
 | Cause de décès | Effet d'un point de chômage | Significativité |
 |:---|---:|:---:|
