@@ -335,6 +335,48 @@ def regression_ruhm(df, cause, x="Taux_chômage"):
     
     return modele.params["chomage"], modele.pvalues["chomage"]
 
+def graphe_ruhm(df, cause, location_ids, x="Taux_chômage"):
+    df_cause = df[df["cause_name"] == cause].dropna(
+        subset=["taux_mortalite", x, "Pourcentage_pop_65plus", "Population"]).copy()
+    df_cause["log_value"] = np.log(df_cause["taux_mortalite"])
+    df_cause = df_cause.rename(columns={x: "chomage"})
+
+    controles = "Pourcentage_pop_65plus + C(location_id) + C(year) + C(location_id):year"
+    poids = np.sqrt(df_cause["Population"])
+    df_cause["res_y"] = smf.wls(f"log_value ~ {controles}", data=df_cause, weights=poids).fit().resid * 100
+    df_cause["res_x"] = smf.wls(f"chomage ~ {controles}", data=df_cause, weights=poids).fit().resid
+
+    # calcul des coefficients de régression
+    coef, p = regression_ruhm(df, cause, x)
+
+    sel = df_cause[df_cause["location_id"].isin(location_ids)]
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    # représentation graphique
+    for i, (lid, g) in enumerate(sel.groupby("location_id")):
+        couleur = plt.cm.tab10(i % 10)
+        nom = g["location_name"].iloc[0]
+        a, b = np.polyfit(g["res_x"], g["res_y"], 1)
+        xs = np.linspace(g["res_x"].min(), g["res_x"].max(), 50)   # droite sur l'étendue du pays
+
+        ax.scatter(g["res_x"], g["res_y"], s=10, alpha=0.35, color=couleur)
+        ax.plot(xs, a * xs + b, color=couleur, linewidth=2, label=f"{nom} ({a:+.2f} %)")
+
+    # droite de Ruhm (tous pays)
+    xs = np.linspace(sel["res_x"].min(), sel["res_x"].max(), 100)
+    ax.plot(xs, coef * 100 * xs, color="black", linewidth=3, linestyle="--",
+            label=f"Ruhm, tous pays ({coef * 100:+.2f} %, p = {p:.3f})")
+
+    ax.axhline(0, color="grey", linewidth=0.5)
+    ax.axvline(0, color="grey", linewidth=0.5)
+    ax.grid(alpha=0.2)
+    ax.set_xlabel("Chômage : écart à la tendance (points)")
+    ax.set_ylabel("Mortalité : écart à la tendance (%)")
+    ax.set_title(f"{cause} : chômage et mortalité par pays")
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=3, fontsize=9, frameon=False)
+    fig.tight_layout()
+    plt.show()
+
 
 ############ Histogrammes répartition moyenne
 
@@ -360,7 +402,6 @@ def histogrammes_moyennes(df, variables, groupe="location_name", ncols=3, bins=8
     fig.tight_layout()
     if afficher:
         plt.show()
-    return fig, axes
 
 
 def evolutions_moyennes(df, variables, temps="year", ncols=3, afficher=True):
@@ -376,10 +417,6 @@ def evolutions_moyennes(df, variables, temps="year", ncols=3, afficher=True):
     fig.tight_layout()
     if afficher:
         plt.show()
-    return fig, axes
-
-
-from matplotlib.lines import Line2D
 
 
 def evolutions_par_pays(df, variables, mis_en_avant, pays="location_name", temps="year", ncols=3, palette=plt.cm.tab10.colors, afficher=True):
@@ -414,4 +451,3 @@ def evolutions_par_pays(df, variables, mis_en_avant, pays="location_name", temps
     fig.tight_layout(rect=[0, 0.06, 1, 1])   # place en bas pour la légende
     if afficher:
         plt.show()
-    return fig, axes
