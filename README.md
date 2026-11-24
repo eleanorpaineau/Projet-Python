@@ -19,6 +19,17 @@ Pour notre étude, nos données proviennent de deux sources :
 
 *Précision:* Les données de la Banque mondiale sont téléchargées automatiquement au premier lancement, puis mises en cache dans data_WB/wb_brut.parquet
 
+## Structure du dépôt
+
+Projet-Python/
+├── README.md
+├── main.ipynb              # Notebook principal : à lire en premier
+├── requirements.txt
+├── data_WB/                # Cache des données Banque mondiale (généré automatiquement)
+└── modules/
+    └── Fonctions.py        # Fonctions utilisées pour les régressions et graphiques
+
+
 
 ## Références
 
