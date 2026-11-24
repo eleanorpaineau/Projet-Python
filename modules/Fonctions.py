@@ -202,7 +202,7 @@ def plot_dataframe_WB(df, mesure, location_id):
     df_mesure = sous_dataframe_WB(df, mesure, location_id)
     plt.figure()
     plt.plot(df_mesure["year"], df_mesure[mesure], marker='o', label='Value')
-    plt.title(f"Evolution of {mesure} in {df_mesure['location_name'].iloc[0]}")
+    plt.title(f"Evolution du {mesure} en {df_mesure['location_name'].iloc[0]}")
     plt.xlabel("Time (Year)")
     plt.ylabel(f"{mesure}")
     plt.legend(loc='upper right', bbox_to_anchor=(1.5, 1),
@@ -216,7 +216,7 @@ def plot_dataframe_multiple_countries_WB(df, mesure, location_ids):
     for location_id in location_ids:
          df_mesure = sous_dataframe_WB(df, mesure, location_id)
          plt.plot(df_mesure["year"], df_mesure[mesure], marker='o', label=f"{df_mesure['location_name'].iloc[0]}")
-    plt.title(f"Evolution of {mesure}")
+    plt.title(f"Evolution du {mesure}")
     plt.xlabel("Time (Year)")
     plt.ylabel(f"{mesure}")
     plt.legend(loc='upper right', bbox_to_anchor=(1+0.4*ceil(N/14), 1), ncol=ceil(N/14), fancybox=True, shadow=True)
@@ -261,28 +261,6 @@ def plot_mortalite_demographie_pays(df, mesure, cause_id, location_ids) :
         plt.title(f"{df_sous['cause_name'].iloc[0]} en fonction du {mesure}")
         plt.legend(loc='upper right', bbox_to_anchor=(1.5+0.4*ceil(N/14), 1), ncol=ceil(N/14), fancybox=True, shadow=True)
     plt.show()
-    
-
-""" 
-# Calcul régression finale
-def regression(df, cause_id, var_controles, location_ids, year_min=1991): 
-    df_filtre = df[(df["year"] >= year_min) & (df["cause_id"] == cause_id) & df["location_id"].isin(location_ids)].copy()
-    
-    df_filtre["m"] = np.log(pd.to_numeric(df_filtre["taux_mortalite"], errors="coerce"))
-    df_filtre["t"] = pd.to_numeric(df_filtre["year"], errors="coerce") - year_min
-    for var in var_controles:
-        df_filtre[var] = pd.to_numeric(df_filtre[var], errors="coerce")
-    cols_requises = ["m", "t"] + var_controles
-    
-    for 
-    df_reg = df_filtre.dropna(subset=cols_requises).copy()
-
-    str_controles = " + ".join([f'Q("{var}")' for var in var_controles])
-    reg = f"m ~ {str_controles} + C(y) + C(l) + C(l):t"
-    modele = smf.ols(formula=reg, data=df_reg)
-    results = modele.fit(cov_type="cluster", cov_kwds={"groups": df_reg["l"]})
-    return results
-"""
 
 
 ################### Etude corrélations par cause et chômage
