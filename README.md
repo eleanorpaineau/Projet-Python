@@ -5,17 +5,17 @@
 
 *Auteurs :  Marie Dominge, Guillaume Gourtay et Eleanor Paineau*
 
-**Notre problématique pour ce projet est : Comment la mortalité réagit-elle aux ralentissements économiques ?**
+**Les effets des ralentissements économiques entre 1991 et 2023 sont-ils les mêmes que ceux constatés par Gerdtham et Tuhm en 2006 sur la période 1960-1997 ?**
 
 Pour répondre à cette question, nous nous sommes appuyés sur l'article de 2006 *Deaths rise in good economic times: Evidence from the OECD* de Gerdtham et Ruhm qui s'intéresse au lien entre taux de chômage et mortalité avec des données entre 1960 et 1997 pour 23 pays de l'OCDE.
 
-Nous avons étendu l'études aux actuels 38 pays de l'OCDE, et avons poursuivi l'étude sur la période 1991 à 2023, particulièrement intéressante parce que marquée par plusieurs grands chocs économiques (éclatement bulle internet en 2000, crise des subprimes en 2007, crise de la dette souveraine de la zone euro en 2012, pandémie de Covid-19 en 2020).
+Nous avons donc étendu l'étude aux 38 pays appartenant à l'OCDE en 2026, et avons poursuivi l'étude sur la période 1991 à 2023, particulièrement intéressante de par les différents grands chocs économiques qui ont marqués ladite période (éclatement de la bulle internet en 2000, crise des subprimes en 2007, crise de la dette souveraine de la zone euro en 2012, pandémie de Covid-19 en 2020).
 
 ## Données
 
 Pour notre étude, nos données proviennent de deux sources :
-- Les données économiques et démographique (taux de chômage, part des plus de 65 ans dans la population...) provient de la World Bank (Banque Mondiale), collectée par API via wbgapi.
-- Les données relatives à la mortalité viennent de la base de données Global Burden of Disease (GBD) de l'Institute for Health Metrics and Evaluation.
+- Les données économiques et démographique (taux de chômage, part des plus de 65 ans dans la population...) proviennent de la World Bank (Banque Mondiale), collectées par API via wbgapi.
+- Les données relatives à la mortalité proviennent de la base de données Global Burden of Disease (GBD) de l'Institute for Health Metrics and Evaluation.
 
 *Précision:* Les données de la Banque mondiale sont téléchargées automatiquement au premier lancement, puis mises en cache dans data_WB/wb_brut.parquet
 
@@ -41,14 +41,12 @@ Comme Gerdtham et Ruhm, nous régressons le logarithme du taux de mortalité sur
 ## Structure du dépôt
 
 Projet-Python/
-- `README.md` : présentation du projet
-- `main.ipynb` : notebook principal, **à lire en premier**
-- `requirements.txt` : liste des dépendances
-- `data_WB/` : cache des données Banque mondiale (généré automatiquement)
+- `README.md` : présentation du projet ;
+- `main.ipynb` : notebook principal, rapport analytique et support de restitution ;
+- `requirements.txt` : liste des dépendances ;
+- `data_WB/` : cache des données Banque mondiale (généré automatiquement) ;
 - `modules/`
-  - `Fonctions.py` : fonctions de régression et de graphiques
-
-
+  - `Fonctions.py` : support de définition de l'ensemble des fonctions utilisées dans le notebook.
 
 ## Références
 
