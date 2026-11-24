@@ -7,7 +7,7 @@ import pandas as pd
 from pathlib import Path
 from matplotlib.lines import Line2D
 import statsmodels.formula.api as smf
-
+import seaborn as sns
 
 ### Constantes
 
@@ -451,3 +451,17 @@ def evolutions_par_pays(df, variables, mis_en_avant, pays="location_name", temps
     fig.tight_layout(rect=[0, 0.06, 1, 1])   # place en bas pour la légende
     if afficher:
         plt.show()
+        
+        
+########## Matrice corrélation (spearman)
+def matrice_correlation(df, variables, groupe="location_name"):
+   
+    moyennes = df.groupby(groupe)[variables].mean().dropna()
+    # Calculate the correlation matrix
+    correlation_matrix_std = moyennes.corr(method='spearman')
+
+    # Plot the correlation matrix
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(correlation_matrix_std, annot=True, cmap='coolwarm', fmt='.2f', vmin=-1, vmax=1)
+    plt.title('Matrice de corrélation des variables démographiques moyennes (Spearman)')
+    plt.show()

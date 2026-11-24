@@ -1,0 +1,9 @@
+numpy>=1.23
+pandas>=2.0
+pyarrow>=12.0
+
+matplotlib>=3.6
+seaborn>=0.12
+
+statsmodels>=0.14
+wbgapi>=1.0.12
