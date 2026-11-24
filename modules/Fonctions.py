@@ -453,17 +453,15 @@ def evolutions_par_pays(df, variables, mis_en_avant, pays="location_name", temps
         plt.show()
         
         
-########## Matrice corrélation (Pearson)
+########## Matrice corrélation (spearman)
 def matrice_correlation(df, variables, groupe="location_name"):
-    """
-    Calcule la matrice de corrélation de Pearson entre les moyennes par pays des variables.
-    """
+   
     moyennes = df.groupby(groupe)[variables].mean().dropna()
     # Calculate the correlation matrix
-    correlation_matrix_std = moyennes.corr(method='pearson')
+    correlation_matrix_std = moyennes.corr(method='spearman')
 
     # Plot the correlation matrix
-    plt.figure(figsize=(12, 10))
-    sns.heatmap(correlation_matrix_std, annot=True, cmap='coolwarm', fmt='.1f', vmin=-1, vmax=1)
-    plt.title('Correlation Matrix (Pearson)')
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(correlation_matrix_std, annot=True, cmap='coolwarm', fmt='.2f', vmin=-1, vmax=1)
+    plt.title('Matrice de corrélation des variables démographiques moyennes (Spearman)')
     plt.show()
