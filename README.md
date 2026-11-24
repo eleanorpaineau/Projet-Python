@@ -22,12 +22,12 @@ Pour notre étude, nos données proviennent de deux sources :
 ## Structure du dépôt
 
 Projet-Python/
-├── README.md
-├── main.ipynb              # Notebook principal : à lire en premier
-├── requirements.txt
-├── data_WB/                # Cache des données Banque mondiale (généré automatiquement)
-└── modules/
-    └── Fonctions.py        # Fonctions utilisées pour les régressions et graphiques
+- `README.md` : présentation du projet
+- `main.ipynb` : notebook principal, **à lire en premier**
+- `requirements.txt` : liste des dépendances
+- `data_WB/` : cache des données Banque mondiale (généré automatiquement)
+- `modules/`
+  - `Fonctions.py` : fonctions de régression et de graphiques
 
 
 
