@@ -132,13 +132,6 @@ def labelisation_dataframe_WB(df, noms_pays, nom_colonne_pays, nom_colonne_id_pa
     df_renomme=df.rename(columns=indicateurs) # renommage des colonnes
     return df_renomme
 
-
-def taux_croissance_dataframe_WB(df, indicateurs_vers_croissance, group_by): #ajoute les colonnes de taux de croissance pour les indicateurs cités dans indicateurs_vers_croissance dans le dataframe
-    df.sort_values(by=[group_by, "year"], inplace=True) # tri du dataframe par pays et par année
-    for col, croissance_col in indicateurs_vers_croissance.items():
-            df[croissance_col] = df.groupby(group_by)[col].pct_change() * 100
-    return(df)
-
 ########################## Fonctions pour les figures
 
 ##### Fonctions pour les figures du dataframe de GBD
