@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 ##Fonction qui prend en argument un dataframe et une liste d'années et trace la mortalité pour 100 000 en fonction du taux de chômage pour chaque année
 
-def plot_mortalite_chomage_annee(df,liste_annee) : 
+def plot_mortalitechomage_annee(df,liste_annee) : 
     plt.figure()
     couleurs = np.random.rand(len(liste_annee), 3)   # couleurs aléatoires pour chaque année
 
@@ -27,8 +27,8 @@ def plot_mortalite_chomage_annee(df,liste_annee) :
 
         # affichage
 
-        plt.scatter(df_utile["Taux_chômage"], df_utile["taux_mortalite"], alpha=0.7, color = couleurs[i])
-        plt.plot(xs, pred, color=couleurs[i],label=f"{liste_annee[i]} : {equation} (R² = {modele.rsquared:.2f})")
+        plt.scatter(df_utile["Taux_chômage"], df_utile["taux_mortalite"], alpha=0.7)
+        plt.plot(xs, pred ,label=f"{liste_annee[i]} : {equation} (R² = {modele.rsquared:.2f})")
 
     plt.xlabel("Taux de chômage (%)")
     plt.ylabel("Taux de mortalité (pour 100 000)")
@@ -38,7 +38,7 @@ def plot_mortalite_chomage_annee(df,liste_annee) :
     
 ##Fonction qui prend en argument un dataframe et renvoie les coefficients de la mortalité pour 100 000 sur le taux de chômage en fonction des années
 
-def plot_coeff_reg_mortalite_chomage(df) : 
+def plot_coeff_regortalite_chomage(df) : 
     plt.figure(figsize=(9, 6))
     annee, coef = [], []
     for i in range (1991, 2024) : # calcul du coefficient de la regression pour chaque annéee
@@ -53,7 +53,7 @@ def plot_coeff_reg_mortalite_chomage(df) :
         annee.append(i)
 
     # affichage
-    plt.scatter(annee, coef, alpha=0.7, color = "purple")
+    plt.plot(annee, coef/(np.max(coef)-np.min(coef)), alpha=0.7, color = "purple")
 
     plt.xlabel("Année")
     plt.ylabel("Coefficient de la régression")

@@ -50,6 +50,9 @@ noms_pays = pd.DataFrame({
     "Switzerland", "Turkey", "United Kingdom", "United States"]
 })
 
+couleurs = [ "blue","orange","green","red","purple","brown","pink", "gray","olive"]
+
+
 ################# Fonctions de formatage des tableaux 
 
 ##### Fonctions pour les deux datafrmes 
@@ -294,6 +297,65 @@ def regression(df, cause, x="Taux_chômage"):
 
     modele=smf.ols("log_value~chomage+C(location_id)+C(year)", data=df_cause).fit(cov_type="cluster", cov_kwds={"groups": df_cause["location_id"]})
     return modele.params["chomage"], modele.pvalues["chomage"]
+
+
+##Fonction qui prend en argument un dataframe et une liste d'années et trace la mortalité pour 100 000 en fonction du taux de chômage pour chaque année
+
+def plot_mortalite_chomage_annee(df,liste_annee) : 
+    plt.figure()
+    for i in range(len(liste_annee)):   # pour chaque année
+        
+        # selection des informations utiles
+        df_utile = df[(df["cause_name"] == "All causes") & (df["year"] == liste_annee[i])]
+        df_utile = df_utile.dropna(subset=["taux_mortalite", "Taux_chômage"])
+
+        # Calcul de la régression
+        modele = smf.ols("taux_mortalite ~ Taux_chômage", data=df_utile).fit()
+        xs = np.linspace(df_utile["Taux_chômage"].min(), df_utile["Taux_chômage"].max(), 100)
+        pred = modele.predict({"Taux_chômage": xs})
+        a = modele.params["Taux_chômage"]
+        b = modele.params["Intercept"]
+        signe = "+" if b >= 0 else "-"
+        equation = f"y = {a:.3g}x {signe} {abs(b):.3g}"
+
+
+        # affichage
+
+        plt.scatter(df_utile["Taux_chômage"], df_utile["taux_mortalite"], alpha=0.7, color=couleurs[i])
+        plt.plot(xs, pred , color = couleurs[i], label=f"{liste_annee[i]} : {equation} (R² = {modele.rsquared:.2f})")
+
+    plt.xlabel("Taux de chômage (%)")
+    plt.ylabel("Taux de mortalité (pour 100 000)")
+    plt.title("Mortalité en fonction du chômage")
+    plt.legend(loc="upper right", bbox_to_anchor=(2, 1), fancybox=True, shadow=True)
+    plt.show()
+
+
+#Fonction qui prend en argument un dataframe et renvoie les coefficients de la mortalité pour 100 000 sur le taux de chômage en fonction des années
+
+def plot_coeff_reg_mortalite_chomage(df) : 
+    plt.figure(figsize=(9, 6))
+    for j in range (1,10):
+        annee, coef = [], []
+        for i in range (1991, 2024) : # calcul du coefficient de la regression pour chaque annéee
+        
+            # selection des informations utiles
+            df_utile = df[(df["cause_id"] == j) & (df["year"] == i)]
+            df_utile = df_utile.dropna(subset=["taux_mortalite", "Taux_chômage"])
+
+            # Calcul de la régression
+            modele = smf.ols("taux_mortalite ~ Taux_chômage", data=df_utile).fit()
+            coef.append(modele.params["Taux_chômage"])
+            annee.append(i)
+
+        # affichage
+        plt.plot(annee, coef, marker='o', color=couleurs[j-1], label=f"{df_utile['cause_name'].iloc[0]}")
+
+    plt.xlabel("Année")
+    plt.ylabel("Coefficient de régression")
+    plt.title("Evolution du coefficient de la régression de la mortalité pour 100 000 sur le taux de chômage en fonction de la cause")
+    plt.legend(loc='upper right', bbox_to_anchor=(1.5, 1), fancybox=True, shadow=True)
+    plt.show()
 
 
 def regression_ruhm(df, cause, x="Taux_chômage"):
