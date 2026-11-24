@@ -2,9 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from math import ceil
-import wbgapi as wb
 import pandas as pd
-from pathlib import Path
 from matplotlib.lines import Line2D
 import statsmodels.formula.api as smf
 import seaborn as sns
@@ -299,35 +297,55 @@ def regression(df, cause, x="Taux_chômage"):
     return modele.params["chomage"], modele.pvalues["chomage"]
 
 
-def regression_ruhm(df, cause, x="Taux_chômage"):
-    df_cause = df[df["cause_name"] == cause].dropna(subset=["taux_mortalite", x, "Pourcentage_pop_65plus", "Population"]).copy()
+def regression_ruhm(df, cause, x="Taux_chômage",avec_dep_sante=False, avec_pop65=False):
+    if avec_dep_sante:
+        df_cause = df[df["cause_name"] == cause].dropna(subset=["taux_mortalite", x, "Pourcentage_pop_65plus", "Population", "Pourcentage_PIB_dépenses_santé"]).copy()
+    else:
+        df_cause = df[df["cause_name"] == cause].dropna(subset=["taux_mortalite", x, "Pourcentage_pop_65plus", "Population"]).copy()
     df_cause["log_value"] = np.log(df_cause["taux_mortalite"])
     df_cause = df_cause.rename(columns={x: "chomage" })
-
-    modele = smf.wls("log_value ~ chomage + Pourcentage_pop_65plus + C(location_id) + C(year)+ C(location_id):year",
-        data=df_cause, weights=np.sqrt(df_cause["Population"])).fit(cov_type="cluster", cov_kwds={"groups": df_cause["location_id"]})
     
-    return modele.params["chomage"], modele.pvalues["chomage"]
+    terme_sante = " + Pourcentage_PIB_dépenses_santé" if avec_dep_sante else ""
+    terme_pop65= "+ Pourcentage_pop_65plus" if avec_pop65 else ""
+    modele = smf.wls(f"log_value ~ chomage{terme_sante}{terme_pop65} + C(location_id) + C(year) + C(location_id):year",
+        data=df_cause, weights=df_cause["Population"]).fit(cov_type="cluster", cov_kwds={"groups": df_cause["location_id"]})
+    
+    ligne = {"cause": cause}
+
+    # On place les variables principales en premier pour une lecture directe
+    preums = ["Intercept", "chomage"]
+    if avec_dep_sante:
+        preums.append("Pourcentage_PIB_dépenses_santé")
+    if avec_pop65:
+        preums.append("Pourcentage_pop_65plus")
+    tous_params = preums + [p for p in modele.params.index if p not in preums]
+
+    for param in tous_params:
+        if param in modele.params:
+            ligne[f"{param}_coef"] = modele.params[param]
+            ligne[f"{param}_pval"] = modele.pvalues[param]
+
+    return pd.DataFrame([ligne])
 
 def graphe_ruhm(df, cause, location_ids, x="Taux_chômage"):
-    df_cause = df[df["cause_name"] == cause].dropna(
-        subset=["taux_mortalite", x, "Pourcentage_pop_65plus", "Population"]).copy()
+    df_cause = df[df["cause_id"] == cause].dropna(subset=["taux_mortalite", x, "Population"]).copy()
     df_cause["log_value"] = np.log(df_cause["taux_mortalite"])
     df_cause = df_cause.rename(columns={x: "chomage"})
-
-    controles = "Pourcentage_pop_65plus + C(location_id) + C(year) + C(location_id):year"
-    poids = np.sqrt(df_cause["Population"])
+    
+    controles = "C(location_id) + C(year) + C(location_id):year"
+    poids = df_cause["Population"]
     df_cause["res_y"] = smf.wls(f"log_value ~ {controles}", data=df_cause, weights=poids).fit().resid * 100
     df_cause["res_x"] = smf.wls(f"chomage ~ {controles}", data=df_cause, weights=poids).fit().resid
-
+    cause_name =df_cause['cause_name'].iloc[0]
     # calcul des coefficients de régression
-    coef, p = regression_ruhm(df, cause, x)
+    res_reg = regression_ruhm(df, cause_name, x)
+    coef, p = res_reg["chomage_coef"].iloc[0], res_reg["chomage_pval"].iloc[0]
 
     sel = df_cause[df_cause["location_id"].isin(location_ids)]
     fig, ax = plt.subplots(figsize=(10, 6))
 
     # représentation graphique
-    for i, (lid, g) in enumerate(sel.groupby("location_id")):
+    for i, (loc_id, g) in enumerate(sel.groupby("location_id")):
         couleur = plt.cm.tab10(i % 10)
         nom = g["location_name"].iloc[0]
         a, b = np.polyfit(g["res_x"], g["res_y"], 1)
@@ -346,7 +364,7 @@ def graphe_ruhm(df, cause, location_ids, x="Taux_chômage"):
     ax.grid(alpha=0.2)
     ax.set_xlabel("Chômage : écart à la tendance (points)")
     ax.set_ylabel("Mortalité : écart à la tendance (%)")
-    ax.set_title(f"{cause} : chômage et mortalité par pays")
+    ax.set_title(f"{cause_name} : chômage et mortalité par pays")
     ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=3, fontsize=9, frameon=False)
     fig.tight_layout()
     plt.show()
